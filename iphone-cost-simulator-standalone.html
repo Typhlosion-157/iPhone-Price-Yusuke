@@ -1,0 +1,263 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>iPhone費用シミュレーター</title>
+<style>
+:root{
+  --bg:#eef1f4;--panel:#fff;--ink:#1b2a41;--sub:#5c6b80;--line:#d5dbe3;
+  --accent:#0e7c86;--accent-soft:#d9eef0;--c1:#1b2a41;--c2:#0e7c86;--c3:#7fb7be;--c4:#c9ced6;--warn:#b4452f;
+  box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px);
+}
+@media (prefers-color-scheme:dark){
+  :root:not([data-theme="light"]){--bg:#111821;--panel:#1a2430;--ink:#e8edf3;--sub:#9aa8ba;--line:#2c3a4a;--accent:#4fc1cc;--accent-soft:#16363b;--c1:#e8edf3;--c2:#4fc1cc;--c3:#2f7f88;--c4:#51606f;--warn:#f08a74}
+}
+:root[data-theme="dark"]{--bg:#111821;--panel:#1a2430;--ink:#e8edf3;--sub:#9aa8ba;--line:#2c3a4a;--accent:#4fc1cc;--accent-soft:#16363b;--c1:#e8edf3;--c2:#4fc1cc;--c3:#2f7f88;--c4:#51606f;--warn:#f08a74}
+html{scroll-padding-top:env(safe-area-inset-top,0px)}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--ink);font-family:"Hiragino Sans","Hiragino Kaku Gothic ProN","Yu Gothic UI","Noto Sans JP",Meiryo,sans-serif;line-height:1.6}
+main{max-width:560px;margin:0 auto;padding:24px 16px 48px}
+h1{font-size:1.35rem;margin:0 0 4px;letter-spacing:.02em}
+.lead{margin:0 0 20px;color:var(--sub);font-size:.9rem}
+.result{background:var(--c1);color:var(--bg);border-radius:18px;padding:22px 20px;margin-bottom:20px}
+:root[data-theme="dark"] .result,:root:not([data-theme="light"]) .result{}
+.result .label{font-size:.85rem;opacity:.8;margin:0}
+.big{font-size:2.6rem;font-weight:700;line-height:1.2;margin:2px 0 2px;font-variant-numeric:tabular-nums;word-break:break-all}
+.big small{font-size:1rem;font-weight:500;margin-left:4px}
+.empty{font-size:.95rem;opacity:.85;margin:6px 0 0}
+.bar{display:flex;height:12px;border-radius:6px;overflow:hidden;margin:16px 0 10px;background:rgba(255,255,255,.18)}
+.bar i{display:block;height:100%}
+.legend{list-style:none;margin:0;padding:0;font-size:.85rem}
+.legend li{display:flex;align-items:center;gap:8px;padding:2px 0}
+.legend .dot{width:10px;height:10px;border-radius:50%;flex:none}
+.legend .v{margin-left:auto;font-variant-numeric:tabular-nums}
+.stats{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-top:16px}
+.stat{background:rgba(255,255,255,.12);border-radius:12px;padding:10px 12px}
+.stat p{margin:0;font-size:.75rem;opacity:.8}
+.stat b{font-size:1.05rem;font-variant-numeric:tabular-nums}
+.note{margin:12px 0 0;font-size:.85rem;color:#ffd9cf}
+fieldset{background:var(--panel);border:1px solid var(--line);border-radius:14px;padding:16px;margin:0 0 16px}
+legend{font-weight:700;font-size:.95rem;padding:0 6px}
+.hint{font-size:.8rem;color:var(--sub);margin:-4px 0 12px}
+.field{display:block;margin-bottom:14px}
+.field:last-child{margin-bottom:0}
+.field span{display:block;font-size:.85rem;margin-bottom:4px}
+input,select{width:100%;font:inherit;font-size:1rem;padding:11px 12px;border:1px solid var(--line);border-radius:10px;background:var(--bg);color:var(--ink)}
+input:focus-visible,select:focus-visible{outline:3px solid var(--accent);outline-offset:1px}
+.row{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.yen{position:relative}
+.yen input{padding-right:34px}
+.yen::after{content:"円";position:absolute;right:12px;top:50%;transform:translateY(-50%);color:var(--sub);font-size:.9rem;pointer-events:none}
+.unit{position:relative}
+.unit input{padding-right:34px}
+.unit::after{content:attr(data-u);position:absolute;right:12px;top:50%;transform:translateY(-50%);color:var(--sub);font-size:.9rem;pointer-events:none}
+.switch{display:flex;align-items:center;gap:10px;margin:-4px 0 14px;cursor:pointer}
+.switch input{position:absolute;opacity:0;width:1px;height:1px}
+.switch .track{position:relative;flex:none;width:46px;height:26px;border-radius:13px;background:var(--line);transition:background .15s}
+.switch .track::after{content:"";position:absolute;top:3px;left:3px;width:20px;height:20px;border-radius:50%;background:#fff;box-shadow:0 1px 2px rgba(0,0,0,.3);transition:transform .15s}
+.switch input:checked+.track{background:var(--accent)}
+.switch input:checked+.track::after{transform:translateX(20px)}
+.switch input:focus-visible+.track{outline:3px solid var(--accent);outline-offset:2px}
+.swtext{font-size:.9rem}
+@media (prefers-reduced-motion:reduce){.switch .track,.switch .track::after{transition:none}}
+.savebar{display:flex;align-items:center;gap:12px;flex-wrap:wrap;margin:-8px 0 20px}
+.savebar .hint{margin:0}
+.btn{font:inherit;font-size:.9rem;padding:9px 16px;border-radius:10px;border:1px solid var(--accent);background:var(--accent);color:#fff;cursor:pointer}
+:root[data-theme="dark"] .btn:not(.ghost),:root:not([data-theme="light"]) .btn:not(.ghost){color:var(--bg)}
+.btn:disabled{opacity:.45;cursor:not-allowed}
+.btn.ghost{background:transparent;color:var(--ink);border-color:var(--line);padding:6px 12px;font-size:.82rem}
+.btn:focus-visible{outline:3px solid var(--accent);outline-offset:2px}
+#saved{margin:0 0 20px}
+#saved h2{font-size:1rem;margin:0 0 8px}
+#savedList{list-style:none;margin:0;padding:0;display:grid;gap:10px}
+#savedList li{background:var(--panel);border:1px solid var(--line);border-radius:12px;padding:12px 14px}
+.sv-name{font-weight:700;font-size:.95rem;margin:0}
+.sv-main{margin:2px 0 0;font-size:1.05rem;font-variant-numeric:tabular-nums}
+.sv-sub{margin:2px 0 8px;font-size:.78rem;color:var(--sub)}
+.sv-act{display:flex;gap:8px}
+.foot{font-size:.78rem;color:var(--sub);margin-top:8px}
+</style>
+</head>
+<body>
+<main>
+  <h1>iPhone費用シミュレーター</h1>
+  <p class="lead">購入価格と下取り価格、使う期間から、月ごとの負担額を計算します。</p>
+
+  <section class="result" aria-live="polite">
+    <p class="label" id="rl">月あたりの負担額</p>
+    <div id="rbody"></div>
+  </section>
+
+  <div class="savebar"><button id="saveBtn" type="button" class="btn">この結果を保存</button><span id="saveMsg" class="hint"></span></div>
+  <section id="saved" hidden><h2>保存した結果</h2><ul id="savedList"></ul></section>
+
+  <fieldset>
+    <legend>端末と期間</legend>
+    <label class="field"><span>機種名</span><input id="model" type="text" placeholder="例:iPhone 17 Pro 256GB" autocomplete="off"></label>
+    <label class="field"><span>購入価格</span><div class="yen"><input id="price" type="number" inputmode="numeric" min="0" placeholder="例:179800"></div></label>
+    <label class="switch"><input id="gift" type="checkbox" role="switch"><span class="track" aria-hidden="true"></span><span class="swtext">ギフトカード10%オフを使う</span></label>
+    <label class="field"><span>残価率(買い替え時の下取り価格が購入価格の何%か)</span><select id="trade"><option value="0">0%(下取りなし)</option><option value="1">1%</option><option value="2">2%</option><option value="3">3%</option><option value="4">4%</option><option value="5">5%</option><option value="6">6%</option><option value="7">7%</option><option value="8">8%</option><option value="9">9%</option><option value="10">10%</option><option value="11">11%</option><option value="12">12%</option><option value="13">13%</option><option value="14">14%</option><option value="15">15%</option><option value="16">16%</option><option value="17">17%</option><option value="18">18%</option><option value="19">19%</option><option value="20">20%</option><option value="21">21%</option><option value="22">22%</option><option value="23">23%</option><option value="24">24%</option><option value="25">25%</option><option value="26">26%</option><option value="27">27%</option><option value="28">28%</option><option value="29">29%</option><option value="30">30%</option><option value="31">31%</option><option value="32">32%</option><option value="33">33%</option><option value="34">34%</option><option value="35">35%</option><option value="36">36%</option><option value="37">37%</option><option value="38">38%</option><option value="39">39%</option><option value="40">40%</option><option value="41">41%</option><option value="42">42%</option><option value="43">43%</option><option value="44">44%</option><option value="45">45%</option><option value="46">46%</option><option value="47">47%</option><option value="48">48%</option><option value="49">49%</option><option value="50">50%</option><option value="51">51%</option><option value="52">52%</option><option value="53">53%</option><option value="54">54%</option><option value="55">55%</option><option value="56">56%</option><option value="57">57%</option><option value="58">58%</option><option value="59">59%</option><option value="60">60%</option><option value="61">61%</option><option value="62">62%</option><option value="63">63%</option><option value="64">64%</option><option value="65">65%</option><option value="66">66%</option><option value="67">67%</option><option value="68">68%</option><option value="69">69%</option><option value="70">70%</option><option value="71">71%</option><option value="72">72%</option><option value="73">73%</option><option value="74">74%</option><option value="75">75%</option><option value="76">76%</option><option value="77">77%</option><option value="78">78%</option><option value="79">79%</option><option value="80">80%</option><option value="81">81%</option><option value="82">82%</option><option value="83">83%</option><option value="84">84%</option><option value="85">85%</option><option value="86">86%</option><option value="87">87%</option><option value="88">88%</option><option value="89">89%</option><option value="90">90%</option></select></label>
+    <div class="field"><span>使用想定期間</span>
+      <div class="row">
+        <div class="unit" data-u="年"><input id="years" type="number" inputmode="numeric" min="0" placeholder="例:3" aria-label="年"></div>
+        <div class="unit" data-u="か月"><input id="months" type="number" inputmode="numeric" min="0" max="11" placeholder="例:0" aria-label="か月"></div>
+      </div>
+    </div>
+  </fieldset>
+
+  <fieldset>
+    <legend>維持費(入力した分だけ加算されます)</legend>
+    <p class="hint">空欄のままなら端末代のみで計算します。</p>
+    <label class="field"><span>月額通信料</span><div class="yen"><input id="comm" type="number" inputmode="numeric" min="0" placeholder="例:3000"></div></label>
+    <div class="field"><span>保証サービス(AppleCare+など)</span>
+      <div class="row">
+        <div class="yen"><input id="warr" type="number" inputmode="numeric" min="0" placeholder="金額" aria-label="保証の金額"></div>
+        <select id="warrType" aria-label="保証の支払い方法"><option value="month">月額</option><option value="lump">一括</option></select>
+      </div>
+    </div>
+    <label class="field"><span>ケース・フィルムなどのアクセサリー代(合計)</span><div class="yen"><input id="acc" type="number" inputmode="numeric" min="0" placeholder="例:8000"></div></label>
+  </fieldset>
+  <p class="foot" id="foot"></p>
+</main>
+
+<script>
+(function(){
+  var $=function(id){return document.getElementById(id)};
+  var fmt=new Intl.NumberFormat("ja-JP");
+  var yen=function(n){return fmt.format(Math.round(n))+"円"};
+  var num=function(id){var v=parseFloat($(id).value);return isFinite(v)&&v>0?v:0};
+
+  function render(){
+    var price=num("price"),rate=parseFloat($("trade").value)||0;
+    var trade=price*rate/100;
+    var months=Math.floor(num("years"))*12+Math.floor(num("months"));
+    var comm=num("comm"),warr=num("warr"),acc=num("acc");
+    var body=$("rbody");
+    if(!price||!months){
+      $("rl").textContent="月あたりの負担額";
+      body.innerHTML='<p class="empty">購入価格と使用想定期間を入力すると、ここに結果が出ます。</p>';
+      cur=null;updateSave();
+      return;
+    }
+    var disc=$("gift").checked?price*0.1:0;
+    var device=Math.max(price-disc-trade,0);
+    var warrTotal=$("warrType").value==="month"?warr*months:warr;
+    var commTotal=comm*months;
+    var extra=commTotal+warrTotal+acc;
+    var total=device+extra;
+    var perMonthDevice=device/months;
+    var perMonth=total/months;
+    var perDay=total/(months*30.4375);
+    var hasExtra=extra>0;
+    var name=$("model").value.trim();
+
+    $("rl").textContent=(name?name+":":"")+(hasExtra?"月あたりの負担額(維持費込み)":"月あたりの負担額(端末代のみ)");
+    var parts=[
+      {n:"端末の実質負担",v:device,c:"var(--c2)"},
+      {n:"通信料",v:commTotal,c:"var(--c3)"},
+      {n:"保証サービス",v:warrTotal,c:"var(--c4)"},
+      {n:"アクセサリー",v:acc,c:"#e0b050"}
+    ].filter(function(p){return p.v>0});
+    var bar=parts.map(function(p){return '<i style="width:'+(p.v/total*100)+'%;background:'+p.c+'"></i>'}).join("");
+    var legend=parts.map(function(p){return '<li><span class="dot" style="background:'+p.c+'"></span>'+p.n+'<span class="v">'+yen(p.v/months)+' /月</span></li>'}).join("");
+    var html='<div class="big">'+fmt.format(Math.round(perMonth))+'<small>円 / 月</small></div>';
+    html+='<div class="bar" role="img" aria-label="月額の内訳">'+bar+'</div><ul class="legend">'+legend+'</ul>';
+    html+='<div class="stats">';
+    if(hasExtra)html+='<div class="stat"><p>端末代のみの月額</p><b>'+yen(perMonthDevice)+'</b></div>';
+    html+='<div class="stat"><p>'+months+'か月の負担総額</p><b>'+yen(total)+'</b></div>';
+    html+='<div class="stat"><p>1日あたり</p><b>'+yen(perDay)+'</b></div>';
+    html+='<div class="stat"><p>下取り見込み額(残価率'+rate+'%)</p><b>'+yen(trade)+'</b></div>';
+    if(disc>0)html+='<div class="stat"><p>ギフトカード割引額</p><b>−'+yen(disc)+'</b></div>';
+    html+='<div class="stat"><p>端末の実質負担</p><b>'+yen(device)+'</b></div>';
+    html+='</div>';
+    body.innerHTML=html;
+    cur={name:name,inputs:snap(),perMonth:perMonth,total:total,months:months,hasExtra:hasExtra,price:price,gift:disc>0,rate:rate};
+    updateSave();
+  }
+
+  ["model","price","gift","trade","years","months","comm","warr","warrType","acc"].forEach(function(id){
+    $(id).addEventListener("input",render);
+    $(id).addEventListener("change",render);
+  });
+  var KEY="iphoneCostSaved",MAX=5;
+  var fields=["model","price","gift","trade","years","months","comm","warr","warrType","acc"];
+  var cur=null,saved=[],ready=false,chain=Promise.resolve();
+
+  function loadLocal(){
+    try{var v=JSON.parse(localStorage.getItem(KEY)||"[]");return Array.isArray(v)?v.slice(0,MAX):[]}catch(e){return []}
+  }
+  function storeLocal(list){
+    try{localStorage.setItem(KEY,JSON.stringify(list));return true}catch(e){return false}
+  }
+  function doPersist(list){
+    return Promise.resolve(storeLocal(JSON.parse(JSON.stringify(list))));
+  }
+  function persist(list){
+    var p=chain.then(function(){return doPersist(list)});
+    chain=p.catch(function(){});
+    return p;
+  }
+  function setFoot(){
+    $("foot").textContent="保存した結果は、このブラウザ(この端末)の中にだけ保存されます。ブラウザのデータを消去すると失われます。";
+  }
+  function snap(){
+    var o={};
+    fields.forEach(function(id){var el=$(id);o[id]=id==="gift"?el.checked:el.value});
+    return o;
+  }
+  function updateSave(){
+    var full=saved.length>=MAX;
+    $("saveBtn").disabled=!ready||!cur||full;
+    $("saveMsg").textContent=!ready?"読み込み中…":full?"保存は最大"+MAX+"件までです。不要な結果を削除してください。":saved.length+" / "+MAX+"件 保存中";
+  }
+  function renderSaved(){
+    var list=$("savedList");
+    list.innerHTML="";
+    $("saved").hidden=saved.length===0;
+    saved.forEach(function(it){
+      var li=document.createElement("li");
+      function p(cls,text){var e=document.createElement("p");e.className=cls;e.textContent=text;li.appendChild(e)}
+      p("sv-name",it.name||"機種名なし");
+      p("sv-main","月 "+yen(it.perMonth)+(it.hasExtra?"(維持費込み)":"(端末代のみ)"));
+      p("sv-sub",it.months+"か月・総額 "+yen(it.total)+"・購入価格 "+yen(it.price)+(it.gift?"(ギフトカード割引あり)":"")+"・残価率 "+it.rate+"%");
+      var act=document.createElement("div");act.className="sv-act";
+      var b1=document.createElement("button");b1.type="button";b1.className="btn ghost";b1.textContent="読み込む";
+      b1.addEventListener("click",function(){
+        fields.forEach(function(id){var el=$(id),v=it.inputs[id];if(id==="gift")el.checked=!!v;else el.value=v==null?"":v});
+        render();window.scrollTo({top:0,behavior:"smooth"});
+      });
+      var b2=document.createElement("button");b2.type="button";b2.className="btn ghost";b2.textContent="削除";
+      b2.addEventListener("click",function(){
+        var prev=saved;
+        saved=saved.filter(function(x){return x.id!==it.id});
+        renderSaved();updateSave();
+        persist(saved).then(function(ok){
+          if(!ok){saved=prev;renderSaved();updateSave();$("saveMsg").textContent="削除できませんでした。"}
+        });
+      });
+      act.appendChild(b1);act.appendChild(b2);li.appendChild(act);
+      list.appendChild(li);
+    });
+  }
+  $("saveBtn").addEventListener("click",function(){
+    if(!ready||!cur||saved.length>=MAX)return;
+    var prev=saved;
+    saved=saved.concat([Object.assign({id:Date.now()},cur)]);
+    renderSaved();updateSave();
+    persist(saved).then(function(ok){
+      if(!ok){saved=prev;renderSaved();updateSave();$("saveMsg").textContent="保存できませんでした。"}
+    });
+  });
+
+  function useLocal(){
+    saved=loadLocal();ready=true;
+    renderSaved();updateSave();setFoot();
+  }
+  setFoot();updateSave();
+  useLocal();
+  render();
+})();
+</script>
+</body>
+</html>
